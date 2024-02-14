@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: accommodation-table
+      author: Serhii Bohatkin
+      changes:
+        - createTable:
+            tableName: accommodations
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: type
+                  type: varchar(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: location
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: daily_rate
+                  type: decimal
+                  constraints:
+                    nullable: false
+              - column:
+                  name: availability
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_deleted
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
