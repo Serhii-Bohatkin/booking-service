@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record AccommodationRequestDto(
-        @NotBlank
         Accommodation.Type type,
         @NotBlank
         String location,

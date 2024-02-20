@@ -5,6 +5,7 @@ import bookingservice.dto.accommodation.AccommodationRequestDto;
 import bookingservice.service.AccommodationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -27,19 +28,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccommodationController {
     private final AccommodationService accommodationService;
 
-    @PreAuthorize("hasAuthority('ADMIN')")
     @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Create an accommodation")
-    public AccommodationDto createAccommodation(@RequestBody AccommodationRequestDto requestDto) {
+    public AccommodationDto createAccommodation(
+            @RequestBody @Valid AccommodationRequestDto requestDto) {
         return accommodationService.create(requestDto);
     }
 
-    @GetMapping
+    @GetMapping("/all")
     @Operation(summary = "Get all available accommodations")
     public List<AccommodationDto> getAll(Pageable pageable) {
         return accommodationService.getAll(pageable);
     }
 
+    @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/{id}")
     @Operation(summary = "Get an accommodation by id")
     public AccommodationDto getById(@PathVariable Long id) {
@@ -50,7 +53,7 @@ public class AccommodationController {
     @PutMapping("/{id}")
     @Operation(summary = "Update an accommodation by id")
     public AccommodationDto update(@PathVariable Long id,
-                                   @RequestBody AccommodationRequestDto requestDto) {
+                                   @RequestBody @Valid AccommodationRequestDto requestDto) {
         return accommodationService.updateById(id, requestDto);
     }
 

@@ -11,7 +11,7 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false
-                    foreignKeyName: fk_accommodations_amenities_accommodations
+                    foreignKeyName: fk_accommodations_amenities_accommodations_id
                     references: accommodations(id)
               - column:
                   name: amenities
