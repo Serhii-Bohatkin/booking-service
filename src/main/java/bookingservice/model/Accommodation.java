@@ -19,6 +19,7 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+
 @Entity
 @Table(name = "accommodations")
 @SQLDelete(sql = "UPDATE accommodations SET is_deleted = true WHERE id = ?")
