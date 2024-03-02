@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: accommodation_amenities
+      id: create-accommodations_amenities-table
       author: Serhii Bohatkin
       changes:
         - createTable:
