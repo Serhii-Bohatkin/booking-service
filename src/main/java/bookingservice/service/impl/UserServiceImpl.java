@@ -36,10 +36,9 @@ public class UserServiceImpl implements UserService {
             throw new RegistrationException("Registration cannot be completed because"
                     + " a user with the same email address already exists");
         }
-        User model = userMapper.toModel(requestDto);
-        User user = new User();
-        model.setPassword(passwordEncoder.encode(requestDto.password()));
-        model.setRoles(assignDefaultRoles(requestDto.email()));
+        User user = userMapper.toModel(requestDto);
+        user.setPassword(passwordEncoder.encode(requestDto.password()));
+        user.setRoles(assignDefaultRoles(requestDto.email()));
         return userMapper.toDto(userRepository.save(user));
     }
 

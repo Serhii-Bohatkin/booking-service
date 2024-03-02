@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
-      id: create-accommodations-table
+      id: create-bookings-table
       author: Serhii Bohatkin
       changes:
         - createTable:
-            tableName: accommodations
+            tableName: bookings
             columns:
               - column:
                   name: id
@@ -14,30 +14,35 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: type
+                  name: check_in_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: check_out_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: accommodation_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_bookings_accommodations_id
+                    references: accommodations(id)
+              - column:
+                  name: user_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_bookings_users_id
+                    references: users(id)
+              - column:
+                  name: status
                   type: varchar(50)
                   constraints:
                     nullable: false
-              - column:
-                  name: location
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: size
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: daily_rate
-                  type: decimal
-                  constraints:
-                    nullable: false
-              - column:
-                  name: availability
-                  type: int
-                  constraints:
-                    nullable: false
+                    unique: true
               - column:
                   name: is_deleted
                   type: boolean
