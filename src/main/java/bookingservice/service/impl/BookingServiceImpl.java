@@ -10,6 +10,7 @@ import bookingservice.model.User;
 import bookingservice.repository.BookingRepository;
 import bookingservice.service.AccommodationService;
 import bookingservice.service.BookingService;
+import bookingservice.service.NotificationService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingMapper bookingMapper;
     private final BookingRepository bookingRepository;
     private final AccommodationService accommodationService;
+    private final NotificationService notificationService;
 
     @Override
     public BookingDto create(BookingRequestDto requestDto) {
@@ -31,7 +33,9 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingMapper.toModel(requestDto);
         booking.setUser(getCurrentUser());
         booking.setStatus(Booking.Status.PENDING);
-        return bookingMapper.toDto(bookingRepository.save(booking));
+        BookingDto bookingDto = bookingMapper.toDto(bookingRepository.save(booking));
+        notificationService.sendSuccessBookingMessage(bookingDto);
+        return bookingDto;
     }
 
     @Override
@@ -89,7 +93,8 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingException("The booking has already been canceled or has expired");
         }
         booking.setStatus(Booking.Status.CANCELED);
-        bookingRepository.save(booking);
+        Booking cancelledBooking = bookingRepository.save(booking);
+        notificationService.sendCanceledBookingMessage(cancelledBooking);
     }
 
     @Override

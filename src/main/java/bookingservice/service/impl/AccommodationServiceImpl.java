@@ -7,6 +7,7 @@ import bookingservice.mapper.AccommodationMapper;
 import bookingservice.model.Accommodation;
 import bookingservice.repository.AccommodationRepository;
 import bookingservice.service.AccommodationService;
+import bookingservice.service.NotificationService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -17,11 +18,15 @@ import org.springframework.stereotype.Service;
 public class AccommodationServiceImpl implements AccommodationService {
     private final AccommodationRepository accommodationRepository;
     private final AccommodationMapper accommodationMapper;
+    private final NotificationService notificationService;
 
     @Override
     public AccommodationDto create(AccommodationRequestDto requestDto) {
         Accommodation accommodation = accommodationMapper.toModel(requestDto);
-        return accommodationMapper.toDto(accommodationRepository.save(accommodation));
+        AccommodationDto dto = accommodationMapper.toDto(
+                accommodationRepository.save(accommodation));
+        notificationService.sendCreatedAccommodationMessage(dto);
+        return dto;
     }
 
     @Override
@@ -51,6 +56,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     public void deleteById(Long id) {
         getById(id);
+        notificationService.sendDeletedAccommodationMessage(id);
         accommodationRepository.deleteById(id);
     }
 }

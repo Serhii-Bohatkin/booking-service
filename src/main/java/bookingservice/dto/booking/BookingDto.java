@@ -11,4 +11,16 @@ public record BookingDto(
         Long userId,
         Booking.Status status
 ) {
+    public String toString() {
+        return String.format("""
+                        
+                        Booking id: %s
+                        Check in date: %s
+                        Check out date: %s
+                        Accommodation id: %s
+                        User id: %s
+                        Status: %s
+                        """,
+                id, checkInDate, checkOutDate, accommodationId, userId, status.name());
+    }
 }

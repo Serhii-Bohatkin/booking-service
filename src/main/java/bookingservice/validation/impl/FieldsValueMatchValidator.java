@@ -9,6 +9,7 @@ public class FieldsValueMatchValidator implements ConstraintValidator<FieldsMatc
     private String field;
     private String fieldMatch;
 
+    @Override
     public void initialize(FieldsMatch constraintAnnotation) {
         this.field = constraintAnnotation.field();
         this.fieldMatch = constraintAnnotation.fieldMatch();
