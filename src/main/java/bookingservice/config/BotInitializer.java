@@ -14,14 +14,18 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 @RequiredArgsConstructor
 public class BotInitializer {
     private final TelegramNotificationServiceImpl bot;
+    private final BotConfig botConfig;
 
     @EventListener(ContextRefreshedEvent.class)
     public void init() throws TelegramApiException {
-        TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
-        try {
-            telegramBotsApi.registerBot(bot);
-        } catch (TelegramApiException e) {
-            throw new TelegramBotException("Failed to start bot", e);
+        //This check is required to build a project on GitHub
+        if (!(botConfig.getBotName().isEmpty() || botConfig.getBotToken().isEmpty())) {
+            TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
+            try {
+                telegramBotsApi.registerBot(bot);
+            } catch (TelegramApiException e) {
+                throw new TelegramBotException("Failed to start bot", e);
+            }
         }
     }
 }
