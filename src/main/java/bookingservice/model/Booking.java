@@ -46,7 +46,7 @@ public class Booking {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true, columnDefinition = "VARCHAR(50)")
+    @Column(nullable = false, columnDefinition = "VARCHAR(50)")
     private Status status;
 
     @Column(name = "is_deleted", nullable = false)
@@ -54,5 +54,19 @@ public class Booking {
 
     public enum Status {
         PENDING, CONFIRMED, CANCELED, EXPIRED
+    }
+
+    @Override
+    public String toString() {
+        return String.format("""
+                        
+                        Booking id: %s
+                        Check in date: %s
+                        Check out date: %s
+                        Accommodation id: %s
+                        User id: %s
+                        Status: %s
+                        """,
+                id, checkInDate, checkOutDate, accommodation.getId(), user.getId(), status.name());
     }
 }
