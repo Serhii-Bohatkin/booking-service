@@ -11,6 +11,7 @@ import bookingservice.repository.BookingRepository;
 import bookingservice.service.AccommodationService;
 import bookingservice.service.BookingService;
 import bookingservice.service.NotificationService;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,10 @@ public class BookingServiceImpl implements BookingService {
     public BookingDto create(BookingRequestDto requestDto) {
         if (!checkAvailableAccommodation(requestDto)) {
             throw new BookingException("Unsuccessful booking, all accommodation are occupied");
+        }
+        if (ChronoUnit.DAYS.between(requestDto.checkInDate(), requestDto.checkOutDate()) <= 0) {
+            throw new BookingException("Unsuccessful booking, "
+                    + "check-in date must be earlier than check-out date");
         }
         Booking booking = bookingMapper.toModel(requestDto);
         booking.setUser(getCurrentUser());
