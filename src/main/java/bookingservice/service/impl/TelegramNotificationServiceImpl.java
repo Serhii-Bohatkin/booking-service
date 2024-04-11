@@ -5,6 +5,7 @@ import bookingservice.dto.accommodation.AccommodationDto;
 import bookingservice.dto.booking.BookingDto;
 import bookingservice.exception.TelegramBotException;
 import bookingservice.model.Booking;
+import bookingservice.model.Payment;
 import bookingservice.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,16 @@ public class TelegramNotificationServiceImpl
     @Override
     public void sendDeletedAccommodationMessage(Long id) {
         sendMessageToAllAdmins("Accommodation with id " + id + " has been deleted");
+    }
+
+    @Override
+    public void sendSuccessfulPaymentMessage(Payment payment) {
+        sendMessageToAllAdmins("Successful payment:" + payment.toString());
+    }
+
+    @Override
+    public void sendPaymentCancelledMessage(Long id) {
+        sendMessageToAllAdmins("Payment with id " + id + " cancelled");
     }
 
     @Override
