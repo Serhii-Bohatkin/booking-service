@@ -1,10 +1,9 @@
 package bookingservice.controller;
 
-import bookingservice.dto.payment.PaymentCancelledResponseDto;
-import bookingservice.dto.payment.PaymentCreateRequestDto;
 import bookingservice.dto.payment.PaymentDto;
-import bookingservice.dto.payment.PaymentSessionDto;
-import bookingservice.dto.payment.SuccessfulPaymentResponseDto;
+import bookingservice.dto.payment.PaymentRequestDto;
+import bookingservice.dto.payment.PaymentResponseCancelDto;
+import bookingservice.dto.payment.PaymentResponseWithoutUrlDto;
 import bookingservice.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,29 +27,29 @@ public class PaymentController {
 
     @Operation(summary = "Get all payments by user id")
     @GetMapping
-    public List<PaymentDto> getPaymentsForUser(@RequestParam Long userId, Pageable pageable) {
+    public List<PaymentDto> getPaymentsForUser(
+            @RequestParam("user_id") Long userId, Pageable pageable) {
         return paymentService.getPaymentsForUser(userId, pageable);
     }
 
     @Operation(summary = "Initialize a payment session")
     @PostMapping
-    public PaymentSessionDto initiatePaymentSession(
-            @RequestBody @Valid PaymentCreateRequestDto requestDto) {
+    public PaymentDto initiatePaymentSession(
+            @RequestBody @Valid PaymentRequestDto requestDto) {
         return paymentService.initiatePaymentSession(requestDto);
     }
 
-    @Operation(summary = "Success session",
-            description = "Confirm successful payment processing through Stripe redirection")
+    @Operation(summary = "Handle successful payment")
     @GetMapping("/success")
-    public SuccessfulPaymentResponseDto handleSuccessfulPayment(@RequestParam Long paymentId) {
-        return paymentService.handleSuccessfulPayment(paymentId);
+    public PaymentResponseWithoutUrlDto handleSuccessfulPayment(
+            @RequestParam("session_id") String sessionId) {
+        return paymentService.handleSuccessfulPayment(sessionId);
     }
 
-    @Operation(summary = "Cancel session",
-            description = "Manage payment cancellation "
-                    + "and return messages during Stripe redirection")
+    @Operation(summary = "Handle canceled payment")
     @GetMapping("/cancel")
-    public PaymentCancelledResponseDto handleCancelledPayment(@RequestParam Long paymentId) {
-        return paymentService.handleCancelledPayment(paymentId);
+    public PaymentResponseCancelDto handleCancelledPayment(
+            @RequestParam("session_id") String sessionId) {
+        return paymentService.handleCanceledPayment(sessionId);
     }
 }
