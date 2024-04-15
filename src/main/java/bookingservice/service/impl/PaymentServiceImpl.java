@@ -1,105 +1,223 @@
 package bookingservice.service.impl;
 
-import static bookingservice.service.impl.StripePaymentServiceImpl.NUMBER_OF_CENTS_IN_A_DOLLAR;
-
-import bookingservice.dto.payment.PaymentCancelledResponseDto;
-import bookingservice.dto.payment.PaymentCreateRequestDto;
 import bookingservice.dto.payment.PaymentDto;
-import bookingservice.dto.payment.PaymentSessionDto;
-import bookingservice.dto.payment.SuccessfulPaymentResponseDto;
+import bookingservice.dto.payment.PaymentRequestDto;
+import bookingservice.dto.payment.PaymentResponseCancelDto;
+import bookingservice.dto.payment.PaymentResponseWithoutUrlDto;
 import bookingservice.exception.EntityNotFoundException;
 import bookingservice.exception.PaymentException;
+import bookingservice.mapper.BookingMapper;
 import bookingservice.mapper.PaymentMapper;
 import bookingservice.model.Booking;
 import bookingservice.model.Payment;
+import bookingservice.model.User;
 import bookingservice.repository.BookingRepository;
 import bookingservice.repository.PaymentRepository;
+import bookingservice.service.BookingService;
 import bookingservice.service.NotificationService;
 import bookingservice.service.PaymentService;
-import bookingservice.service.StripePaymentService;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
-    private final BookingRepository bookingRepository;
-    private final StripePaymentService stripePaymentService;
-    private final PaymentMapper paymentMapper;
+    private static final Long DEFAULT_QUANTITY = 1L;
+    private static final String PRODUCT_DATA_NAME = "Payment for booking";
+    private static final String PAYMENT_CURRENCY_USD = "usd";
+    private static final BigDecimal PRICE_CORRECTION = BigDecimal.valueOf(100L);
+    private static final String CANCEL_URL = "http://localhost:8080/payments"
+            + "/cancel?session_id={CHECKOUT_SESSION_ID}";
+    private static final String SUCCESS_URL = "http://localhost:8080/payments"
+            + "/success?session_id={CHECKOUT_SESSION_ID}";
+    private static final long AMOUNT_DAY = 1L;
+    private static final String PAYMENT_IS_PAID_STATUS = "paid";
+
+    private final BookingService bookingService;
     private final PaymentRepository paymentRepository;
+    private final PaymentMapper paymentMapper;
+    private final BookingRepository bookingRepository;
     private final NotificationService telegramNotificationService;
+    private final BookingMapper bookingMapper;
+    @Value("${stripe.secret.key}")
+    private String stripe;
+
+    @PostConstruct
+    public void init() {
+        Stripe.apiKey = stripe;
+    }
+
+    @Transactional
+    @Override
+    public PaymentDto initiatePaymentSession(PaymentRequestDto paymentRequestDto) {
+        Session session;
+        try {
+            session = Session.create(getSessionCreateParams(paymentRequestDto));
+            return paymentMapper.toDto(savePayment(session, paymentRequestDto));
+        } catch (StripeException e) {
+            throw new PaymentException("Cant pay for booking!", e);
+        }
+    }
 
     @Override
-    public List<PaymentDto> getPaymentsForUser(Long userId, Pageable pageable) {
-        return paymentRepository.findPaymentsByUserId(userId, pageable).stream()
+    public List<PaymentDto> getPaymentsForUser(Long id, Pageable pageable) {
+        return paymentRepository.findAllByBookingUserId(id, Pageable.unpaged()).stream()
                 .map(paymentMapper::toDto)
                 .toList();
     }
 
     @Override
-    public PaymentSessionDto initiatePaymentSession(PaymentCreateRequestDto requestDto) {
-        PaymentSessionDto paymentSessionDto =
-                stripePaymentService.createPaymentSession(requestDto.bookingId());
-        Booking booking = getBookingByBookingId(requestDto.bookingId());
-        Payment payment = createPayment(booking, paymentSessionDto);
-        paymentRepository.save(payment);
-        paymentSessionDto.setPaymentId(payment.getId());
-        paymentSessionDto.setAmount(payment.getAmountToPay().longValue());
-        return paymentSessionDto;
-    }
-
-    private Payment createPayment(Booking booking, PaymentSessionDto paymentSessionDto) {
-        Payment payment = new Payment();
-        payment.setBooking(booking);
-        payment.setSessionId(paymentSessionDto.getSessionId());
-        payment.setAmountToPay(BigDecimal.valueOf(paymentSessionDto.getAmount())
-                .divide(NUMBER_OF_CENTS_IN_A_DOLLAR));
-        payment.setStatus(Payment.Status.PENDING);
-        try {
-            payment.setSessionUrl(new URL(paymentSessionDto.getSessionUrl()));
-        } catch (MalformedURLException e) {
-            throw new PaymentException("Invalid URL " + paymentSessionDto.getSessionUrl(), e);
+    public PaymentResponseWithoutUrlDto handleSuccessfulPayment(String sessionId) {
+        if (!isPaymentPaid(sessionId)) {
+            throw new PaymentException("Payment with session id " + sessionId + " not paid");
         }
-        return payment;
-    }
-
-    @Override
-    public SuccessfulPaymentResponseDto handleSuccessfulPayment(Long paymentId) {
-        Payment payment = findPaymentById(paymentId);
-        payment.setStatus(Payment.Status.PAID);
-        paymentRepository.save(payment);
+        Payment payment = paymentRepository.findBySessionId(sessionId)
+                .orElseThrow(() ->
+                        new PaymentException("Payment with sessionId: " + sessionId
+                                + " not found!"));
+        Booking booking = payment.getBooking();
+        if (payment.getStatus().equals(Payment.Status.PENDING)
+                && booking.getStatus().equals(Booking.Status.PENDING)) {
+            booking.setStatus(Booking.Status.CONFIRMED);
+            payment.setStatus(Payment.Status.PAID);
+            bookingRepository.save(booking);
+            paymentRepository.save(payment);
+        }
+        PaymentResponseWithoutUrlDto dtoWithoutUrl = paymentMapper.toDtoWithoutUrl(payment);
         telegramNotificationService.sendSuccessfulPaymentMessage(payment);
-
-        return new SuccessfulPaymentResponseDto(
-                paymentId,
-                Payment.Status.PAID,
-                payment.getSessionUrl().toString());
+        return dtoWithoutUrl;
     }
 
     @Override
-    public PaymentCancelledResponseDto handleCancelledPayment(Long paymentId) {
-        Payment payment = findPaymentById(paymentId);
-        payment.setStatus(Payment.Status.CANCELED);
-        paymentRepository.save(payment);
-        telegramNotificationService.sendPaymentCancelledMessage(paymentId);
-        return new PaymentCancelledResponseDto(paymentId, Payment.Status.CANCELED);
+    public PaymentResponseCancelDto handleCanceledPayment(String sessionId) {
+        try {
+            Session session = Session.retrieve(sessionId);
+            LocalDateTime sessionExpirationTime = Instant.ofEpochSecond(session.getExpiresAt())
+                    .atZone(ZoneId.systemDefault()).toLocalDateTime();
+            Payment payment = paymentRepository.findBySessionId(sessionId).orElseThrow(
+                    () -> new EntityNotFoundException("Payment not found"));
+            telegramNotificationService.sendPaymentCancelledMessage(payment.getId());
+            return new PaymentResponseCancelDto(payment.getId(),
+                    "Payment cancelled. You can try again until: " + sessionExpirationTime,
+                    payment.getSessionUrl());
+        } catch (StripeException e) {
+            throw new PaymentException("Cant find session: " + sessionId, e);
+        }
     }
 
-    private Booking getBookingByBookingId(Long id) {
-        return bookingRepository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException(
-                        "Can't find a booking with id: " + id));
+    private boolean isPaymentPaid(String sessionId) {
+        Session session = null;
+        String status = "";
+        try {
+            session = Session.retrieve(sessionId);
+            status = session.getPaymentStatus();
+        } catch (StripeException e) {
+            throw new PaymentException("Cant find session: " + sessionId, e);
+        }
+        return PAYMENT_IS_PAID_STATUS.equals(status);
     }
 
-    private Payment findPaymentById(Long id) {
-        return paymentRepository.findById((id)).orElseThrow(
-                () -> new EntityNotFoundException(
-                        "Can't find a payment with id: " + id)
-        );
+    private SessionCreateParams getSessionCreateParams(PaymentRequestDto paymentRequestDto) {
+        return SessionCreateParams.builder()
+                .setCustomerEmail(getCurrentUser().getEmail())
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .setSuccessUrl(SUCCESS_URL)
+                .setCancelUrl(CANCEL_URL)
+                .setExpiresAt(
+                        LocalDateTime.now()
+                                .plusDays(AMOUNT_DAY)
+                                .atZone(ZoneId.systemDefault())
+                                .toEpochSecond())
+                .addLineItem(
+                        SessionCreateParams.LineItem.builder()
+                                .setQuantity(DEFAULT_QUANTITY)
+                                .setPriceData(getPriceData(paymentRequestDto))
+                                .build())
+                .build();
+    }
+
+    private SessionCreateParams.LineItem.PriceData getPriceData(
+            PaymentRequestDto paymentRequestDto) {
+        return SessionCreateParams.LineItem.PriceData.builder()
+                .setCurrency(PAYMENT_CURRENCY_USD)
+                .setUnitAmountDecimal(getTotalPrice(paymentRequestDto))
+                .setProductData(
+                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                .setName(PRODUCT_DATA_NAME)
+                                .setDescription(
+                                        getBookingDescription(paymentRequestDto))
+                                .build()
+                )
+                .build();
+    }
+
+    private BigDecimal getTotalPrice(PaymentRequestDto paymentRequestDto) {
+        Booking booking = findBookingById(paymentRequestDto.bookingId());
+        long daysBetween = ChronoUnit.DAYS.between(
+                booking.getCheckInDate(),
+                booking.getCheckOutDate());
+
+        return booking.getAccommodation().getDailyRate()
+                .multiply(BigDecimal.valueOf(daysBetween))
+                .multiply(PRICE_CORRECTION);
+    }
+
+    public String getBookingDescription(PaymentRequestDto payment) {
+        Booking booking = findBookingById(payment.bookingId());
+        return "Payment booking at address: " + booking.getAccommodation().getLocation();
+    }
+
+    private Booking findBookingById(Long id) {
+        bookingService.getAllForCurrentUser(Pageable.unpaged()).stream()
+                .filter(booking -> booking.id().equals(id))
+                .findFirst()
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Booking with id: " + id + "not found!"));
+        return bookingRepository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Booking with id: " + id + "not found!"));
+    }
+
+    private Payment savePayment(Session session,
+                                PaymentRequestDto paymentRequestDto) {
+        Payment payment = new Payment();
+        try {
+            payment.setSessionUrl(new URL(session.getUrl()));
+        } catch (MalformedURLException e) {
+            throw new PaymentException("Invalid URL " + session.getUrl(), e);
+        }
+        payment.setStatus(Payment.Status.PENDING);
+        payment.setBooking(findBookingById(paymentRequestDto.bookingId()));
+        payment.setSessionId(session.getId());
+        payment.setAmountToPay(BigDecimal.valueOf(session.getAmountSubtotal())
+                .divide(PRICE_CORRECTION, RoundingMode.valueOf(3)));
+        return paymentRepository.save(payment);
+    }
+
+    private User getCurrentUser() {
+        return (User) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
     }
 }

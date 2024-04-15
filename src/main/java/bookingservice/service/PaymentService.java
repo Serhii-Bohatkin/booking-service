@@ -1,19 +1,18 @@
 package bookingservice.service;
 
-import bookingservice.dto.payment.PaymentCancelledResponseDto;
-import bookingservice.dto.payment.PaymentCreateRequestDto;
 import bookingservice.dto.payment.PaymentDto;
-import bookingservice.dto.payment.PaymentSessionDto;
-import bookingservice.dto.payment.SuccessfulPaymentResponseDto;
+import bookingservice.dto.payment.PaymentRequestDto;
+import bookingservice.dto.payment.PaymentResponseCancelDto;
+import bookingservice.dto.payment.PaymentResponseWithoutUrlDto;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 
 public interface PaymentService {
-    List<PaymentDto> getPaymentsForUser(Long userId, Pageable pageable);
+    List<PaymentDto> getPaymentsForUser(Long id, Pageable pageable);
 
-    PaymentSessionDto initiatePaymentSession(PaymentCreateRequestDto paymentCreateRequestDto);
+    PaymentDto initiatePaymentSession(PaymentRequestDto paymentRequestDto);
 
-    SuccessfulPaymentResponseDto handleSuccessfulPayment(Long paymentId);
+    PaymentResponseWithoutUrlDto handleSuccessfulPayment(String sessionId);
 
-    PaymentCancelledResponseDto handleCancelledPayment(Long paymentId);
+    PaymentResponseCancelDto handleCanceledPayment(String sessionId);
 }
