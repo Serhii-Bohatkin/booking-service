@@ -6,10 +6,10 @@ import bookingservice.dto.payment.PaymentResponseCancelDto;
 import bookingservice.dto.payment.PaymentResponseWithoutUrlDto;
 import bookingservice.exception.EntityNotFoundException;
 import bookingservice.exception.PaymentException;
-import bookingservice.mapper.BookingMapper;
 import bookingservice.mapper.PaymentMapper;
 import bookingservice.model.Booking;
 import bookingservice.model.Payment;
+import bookingservice.model.Role;
 import bookingservice.model.User;
 import bookingservice.repository.BookingRepository;
 import bookingservice.repository.PaymentRepository;
@@ -33,6 +33,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +57,6 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMapper paymentMapper;
     private final BookingRepository bookingRepository;
     private final NotificationService telegramNotificationService;
-    private final BookingMapper bookingMapper;
     @Value("${stripe.secret.key}")
     private String stripe;
 
@@ -79,11 +79,22 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<PaymentDto> getPaymentsForUser(Long id, Pageable pageable) {
-        return paymentRepository.findAllByBookingUserId(id, Pageable.unpaged()).stream()
-                .map(paymentMapper::toDto)
-                .toList();
+        if (getCurrentUser().getId().equals(id)) {
+            return paymentRepository.findAllByBookingUserId(id, Pageable.unpaged()).stream()
+                    .map(paymentMapper::toDto)
+                    .toList();
+        }
+        boolean isUserAdmin = getCurrentUser().getRoles().stream()
+                .anyMatch(role -> Role.RoleName.ADMIN.equals(role.getName()));
+        if (isUserAdmin) {
+            return paymentRepository.findAllByBookingUserId(id, Pageable.unpaged()).stream()
+                    .map(paymentMapper::toDto)
+                    .toList();
+        }
+        throw new EntityNotFoundException("No payments found for user with id " + id);
     }
 
+    @Transactional
     @Override
     public PaymentResponseWithoutUrlDto handleSuccessfulPayment(String sessionId) {
         if (!isPaymentPaid(sessionId)) {
@@ -121,6 +132,39 @@ public class PaymentServiceImpl implements PaymentService {
         } catch (StripeException e) {
             throw new PaymentException("Cant find session: " + sessionId, e);
         }
+    }
+
+    @Transactional
+    @Scheduled(fixedDelay = 60000)
+    @Override
+    public void checkExpiredPayment() {
+        List<Payment> payments = paymentRepository.findByStatus(Payment.Status.PENDING);
+        for (Payment payment : payments) {
+            Session session = null;
+            try {
+                session = Session.retrieve(payment.getSessionId());
+                Long expiresAt = session.getExpiresAt();
+                LocalDateTime dateTime = LocalDateTime.ofInstant(
+                        Instant.ofEpochSecond(expiresAt),
+                        ZoneId.systemDefault());
+                if (dateTime.isBefore(LocalDateTime.now())) {
+                    Booking booking = getBookingById(payment);
+                    booking.setStatus(Booking.Status.CANCELED);
+                    bookingRepository.save(booking);
+                    payment.setStatus(Payment.Status.EXPIRED);
+                    paymentRepository.save(payment);
+                }
+            } catch (StripeException e) {
+                throw new PaymentException("Cant retrieve the session", e);
+            }
+        }
+    }
+
+    private Booking getBookingById(Payment payment) {
+        return bookingRepository.findById(payment.getBooking().getId()).orElseThrow(
+                () -> new EntityNotFoundException("Can't find booking with id "
+                        + payment.getBooking().getId())
+        );
     }
 
     private boolean isPaymentPaid(String sessionId) {

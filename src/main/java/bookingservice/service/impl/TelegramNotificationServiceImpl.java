@@ -52,6 +52,11 @@ public class TelegramNotificationServiceImpl
     }
 
     @Override
+    public void sendNotExpiredBookingMessage() {
+        sendMessageToAllAdmins("There are no expired bookings today");
+    }
+
+    @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();

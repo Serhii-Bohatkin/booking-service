@@ -11,10 +11,12 @@ import bookingservice.repository.BookingRepository;
 import bookingservice.service.AccommodationService;
 import bookingservice.service.BookingService;
 import bookingservice.service.NotificationService;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -105,6 +107,21 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public void delete(Long id) {
         bookingRepository.deleteById(id);
+    }
+
+    @Scheduled(cron = "0 0 9 * * *")
+    @Override
+    public void checkExpiredBooking() {
+        List<Booking> expiredBookings = bookingRepository.findByStatusAndCheckOutDateLessThanEqual(
+                Booking.Status.CONFIRMED, LocalDate.now());
+        if (expiredBookings.isEmpty()) {
+            notificationService.sendNotExpiredBookingMessage();
+        } else {
+            expiredBookings.forEach(booking -> {
+                booking.setStatus(Booking.Status.EXPIRED);
+                bookingRepository.save(booking);
+            });
+        }
     }
 
     private BookingDto getBookingDtoForCurrentUserById(Long id) {

@@ -26,4 +26,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @EntityGraph(attributePaths = "accommodation")
     @Override
     Optional<Booking> findById(Long id);
+
+    List<Booking> findByStatusAndCheckOutDateLessThanEqual(
+            Booking.Status status, LocalDate checkOutDate);
 }

@@ -15,4 +15,6 @@ public interface PaymentService {
     PaymentResponseWithoutUrlDto handleSuccessfulPayment(String sessionId);
 
     PaymentResponseCancelDto handleCanceledPayment(String sessionId);
+
+    void checkExpiredPayment();
 }

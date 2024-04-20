@@ -17,4 +17,6 @@ public interface NotificationService {
     void sendSuccessfulPaymentMessage(Payment payment);
 
     void sendPaymentCancelledMessage(Long id);
+
+    void sendNotExpiredBookingMessage();
 }

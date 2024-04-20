@@ -20,4 +20,6 @@ public interface BookingService {
     void cancelBooking(Long id);
 
     void delete(Long id);
+
+    void checkExpiredBooking();
 }
