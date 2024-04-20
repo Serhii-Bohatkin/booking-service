@@ -51,7 +51,7 @@ public class Payment {
     private boolean isDeleted;
 
     public enum Status {
-        PENDING, PAID, CANCELED
+        PENDING, PAID, EXPIRED
     }
 
     @Override

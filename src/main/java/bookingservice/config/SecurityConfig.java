@@ -41,7 +41,8 @@ public class SecurityConfig {
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
                                         "/swagger-resources/**",
-                                        "/error/**"
+                                        "/error/**",
+                                        "/actuator/health"
                                 )
                                 .permitAll()
                                 .anyRequest()
