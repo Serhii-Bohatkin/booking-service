@@ -6,7 +6,6 @@ import bookingservice.dto.payment.PaymentResponseCancelDto;
 import bookingservice.dto.payment.PaymentResponseWithoutUrlDto;
 import bookingservice.exception.EntityNotFoundException;
 import bookingservice.exception.PaymentException;
-import bookingservice.mapper.BookingMapper;
 import bookingservice.mapper.PaymentMapper;
 import bookingservice.model.Booking;
 import bookingservice.model.Payment;
