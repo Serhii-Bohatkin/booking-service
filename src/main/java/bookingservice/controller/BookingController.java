@@ -66,14 +66,7 @@ public class BookingController {
         return bookingService.updateBooking(id, requestDto);
     }
 
-    @DeleteMapping("/cancel/{id}")
-    @Operation(summary = "Cancel booking by id")
-    public void cancelBooking(@PathVariable Long id) {
-        bookingService.cancelBooking(id);
-    }
-
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "Delete booking by id")
     public void delete(@PathVariable Long id) {
         bookingService.delete(id);

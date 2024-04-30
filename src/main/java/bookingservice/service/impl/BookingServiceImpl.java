@@ -11,9 +11,11 @@ import bookingservice.repository.BookingRepository;
 import bookingservice.service.AccommodationService;
 import bookingservice.service.BookingService;
 import bookingservice.service.NotificationService;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -30,12 +32,12 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto create(BookingRequestDto requestDto) {
-        if (!checkAvailableAccommodation(requestDto)) {
-            throw new BookingException("Unsuccessful booking, all accommodation are occupied");
-        }
         if (ChronoUnit.DAYS.between(requestDto.checkInDate(), requestDto.checkOutDate()) <= 0) {
             throw new BookingException("Unsuccessful booking, "
                     + "check-in date must be earlier than check-out date");
+        }
+        if (!checkAvailableAccommodation(requestDto)) {
+            throw new BookingException("Unsuccessful booking, all accommodation are occupied");
         }
         Booking booking = bookingMapper.toModel(requestDto);
         booking.setUser(getCurrentUser());
@@ -94,19 +96,14 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public void cancelBooking(Long id) {
+    public void delete(Long id) {
         Booking booking = bookingMapper.toModel(getBookingDtoForCurrentUserById(id));
         if (!new BookingPredicate().test(booking)) {
-            throw new BookingException("The booking has already been canceled or has expired");
+            throw new BookingException("The booking with id " + id + "has already been canceled or has expired");
         }
         booking.setStatus(Booking.Status.CANCELED);
         Booking cancelledBooking = bookingRepository.save(booking);
         notificationService.sendCanceledBookingMessage(cancelledBooking);
-    }
-
-    @Override
-    public void delete(Long id) {
-        bookingRepository.deleteById(id);
     }
 
     @Scheduled(cron = "0 0 9 * * *")
