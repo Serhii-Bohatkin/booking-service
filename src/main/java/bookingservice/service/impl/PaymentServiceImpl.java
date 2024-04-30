@@ -79,14 +79,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<PaymentDto> getPaymentsForUser(Long id, Pageable pageable) {
-        if (getCurrentUser().getId().equals(id)) {
-            return paymentRepository.findAllByBookingUserId(id, Pageable.unpaged()).stream()
-                    .map(paymentMapper::toDto)
-                    .toList();
-        }
-        boolean isUserAdmin = getCurrentUser().getRoles().stream()
+        boolean isUserHasRoleAdmin = getCurrentUser().getRoles().stream()
                 .anyMatch(role -> Role.RoleName.ADMIN.equals(role.getName()));
-        if (isUserAdmin) {
+        if (isUserHasRoleAdmin || getCurrentUser().getId().equals(id)) {
             return paymentRepository.findAllByBookingUserId(id, Pageable.unpaged()).stream()
                     .map(paymentMapper::toDto)
                     .toList();

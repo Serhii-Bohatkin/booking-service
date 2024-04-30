@@ -3,10 +3,8 @@ package bookingservice.dto.user;
 import bookingservice.validation.FieldsMatch;
 import bookingservice.validation.Password;
 import jakarta.validation.constraints.Email;
-import lombok.experimental.Accessors;
 import org.hibernate.validator.constraints.Length;
 
-@Accessors(chain = true)
 @FieldsMatch(field = "password", fieldMatch = "repeatPassword",
         message = "Password and repeatPassword fields are not matching")
 public record UserRegistrationRequestDto(
