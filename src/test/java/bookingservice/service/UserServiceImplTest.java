@@ -116,10 +116,10 @@ public class UserServiceImplTest {
         User user = createUser();
         UserResponseDto expected = createUserResponseDto();
 
+        when(userMapper.toDto(user)).thenReturn(expected);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
         SecurityContextHolder.setContext(securityContext);
-        when(userMapper.toDto(user)).thenReturn(expected);
 
         UserResponseDto actual = userService.getCurrentUserInfo();
         assertThat(actual).isEqualTo(expected);
@@ -131,10 +131,10 @@ public class UserServiceImplTest {
         UserResponseDto expected = createSecondUserResponseDto();
 
         when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(userMapper.toDto(user)).thenReturn(expected);
         when(authentication.getPrincipal()).thenReturn(user);
         SecurityContextHolder.setContext(securityContext);
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(expected);
 
         UserResponseDto actual = userService.update(new UserUpdateDto("Adam", "Smith"));
         assertThat(actual).isEqualTo(expected);

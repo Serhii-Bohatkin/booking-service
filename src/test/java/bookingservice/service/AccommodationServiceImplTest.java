@@ -1,5 +1,10 @@
 package bookingservice.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import bookingservice.dto.accommodation.AccommodationDto;
 import bookingservice.dto.accommodation.AccommodationRequestDto;
 import bookingservice.exception.EntityNotFoundException;
@@ -19,11 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class AccommodationServiceImplTest {
@@ -73,7 +73,8 @@ public class AccommodationServiceImplTest {
         Accommodation accommodation = createAccommodation();
         AccommodationDto expected = createAccommodationDto();
 
-        when(accommodationRepository.findById(ACCOMMODATION_ID)).thenReturn(Optional.of(accommodation));
+        when(accommodationRepository.findById(ACCOMMODATION_ID))
+                .thenReturn(Optional.of(accommodation));
         when(accommodationMapper.toDto(accommodation)).thenReturn(expected);
 
         AccommodationDto actual = accommodationService.getById(ACCOMMODATION_ID);
@@ -95,7 +96,8 @@ public class AccommodationServiceImplTest {
         AccommodationDto expected = createAccommodationDto();
         AccommodationRequestDto requestDto = createAccommodationRequestDto();
 
-        when(accommodationRepository.findById(ACCOMMODATION_ID)).thenReturn(Optional.of(accommodation));
+        when(accommodationRepository.findById(ACCOMMODATION_ID))
+                .thenReturn(Optional.of(accommodation));
         when(accommodationMapper.toDto(accommodation)).thenReturn(expected);
         when(accommodationMapper.toModel(requestDto)).thenReturn(accommodation);
         when(accommodationRepository.save(accommodation)).thenReturn(accommodation);
@@ -117,7 +119,8 @@ public class AccommodationServiceImplTest {
     public void deleteById_ExistingId_Success() {
         Accommodation accommodation = createAccommodation();
 
-        when(accommodationRepository.findById(ACCOMMODATION_ID)).thenReturn(Optional.of(accommodation));
+        when(accommodationRepository.findById(ACCOMMODATION_ID))
+                .thenReturn(Optional.of(accommodation));
         when(accommodationMapper.toDto(accommodation)).thenReturn(createAccommodationDto());
 
         accommodationService.deleteById(ACCOMMODATION_ID);

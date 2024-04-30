@@ -38,6 +38,14 @@ public class PaymentServiceImplTest {
     public static final long USER_ID = 1L;
     public static final long BOOKING_ID = 1L;
     public static final long PAYMENT_ID = 1L;
+    public static final String URL = "https://checkout.stripe.com/c/pay/cs_test_a1HtKE"
+            + "xKKHk1mxKCaqNaj40DkOI9jzLtnshjeFuzjfZovyn7R0vUaOXQxN#fidkdWxOYHwnPyd1blpx"
+            + "YHZxWjA0SnBGX0s1N0NmUz1WYWFoTTNLX1EwR2dJVGpxa1FnPHdKSkNHdDxrSG9zXUh%2FSnR"
+            + "BZ2NJSWhnQFNTdzNvPXNWSX03YGpXMzx%2FbkRcYEg9V2NGTlw9RjVJNTV8cXU9c2EyNScpJ2N"
+            + "3amhWYHdzYHcnP3F3cGApJ2 lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZg"
+            + "bWppYWB3dic%2FcXdwYHgl";
+    public static final String SESSION_ID
+            = "cs_test_a1HtKExKKHk1mxKCaqNaj40DkOI9jzLtnshjeFuzjfZovyn7R0vUaOXQxN";
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
@@ -58,14 +66,13 @@ public class PaymentServiceImplTest {
         User user = createUser();
         user.getRoles().add(createRoleAdmin());
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(user);
-        SecurityContextHolder.setContext(securityContext);
-        when(paymentRepository.findAllByBookingUserId(USER_ID, unpaged())).thenReturn(payments);
         when(paymentMapper.toDto(payment)).thenReturn(expected);
+        when(paymentRepository.findAllByBookingUserId(USER_ID, unpaged())).thenReturn(payments);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
 
         List<PaymentDto> actual = paymentService.getPaymentsForUser(USER_ID, unpaged());
-
         assertThat(actual).hasSize(1);
         assertThat(actual.get(0)).isEqualTo(expected);
     }
@@ -77,14 +84,13 @@ public class PaymentServiceImplTest {
         Page<Payment> payments = new PageImpl<>(paymentList, unpaged(), paymentList.size());
         PaymentDto expected = createPaymentDto();
 
+        when(paymentMapper.toDto(payment)).thenReturn(expected);
+        when(paymentRepository.findAllByBookingUserId(USER_ID, unpaged())).thenReturn(payments);
         when(securityContext.getAuthentication()).thenReturn(authentication);
         when(authentication.getPrincipal()).thenReturn(createUser());
         SecurityContextHolder.setContext(securityContext);
-        when(paymentRepository.findAllByBookingUserId(USER_ID, unpaged())).thenReturn(payments);
-        when(paymentMapper.toDto(payment)).thenReturn(expected);
 
         List<PaymentDto> actual = paymentService.getPaymentsForUser(USER_ID, unpaged());
-
         assertThat(actual).hasSize(1);
         assertThat(actual.get(0)).isEqualTo(expected);
     }
@@ -158,12 +164,8 @@ public class PaymentServiceImplTest {
                     PAYMENT_ID,
                     Payment.Status.PENDING,
                     BOOKING_ID,
-                    new URL("https://checkout.stripe.com/c/pay/cs_test_a1HtKExKKHk1mxKC"
-                            + "aqNaj40DkOI9jzLtnshjeFuzjfZovyn7R0vUaOXQxN#fidkdWxOYHwnPyd1blpxYHZxWjA0SnBGX"
-                            + "0s1N0NmUz1WYWFoTTNLX1EwR2dJVGpxa1FnPHdKSkNHdDxrSG9zXUh%2FSnRBZ2NJSWhnQFNTdzNvP"
-                            + "XNWSX03YGpXMzx%2FbkRcYEg9V2NGTlw9RjVJNTV8cXU9c2EyNScpJ2N3amhWYHdzYHcnP3F3cGApJ2"
-                            + "lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl"),
-                    "cs_test_a1HtKExKKHk1mxKCaqNaj40DkOI9jzLtnshjeFuzjfZovyn7R0vUaOXQxN",
+                    new URL(URL),
+                    SESSION_ID,
                     BigDecimal.valueOf(130.00)
             );
         } catch (MalformedURLException e) {
@@ -176,14 +178,10 @@ public class PaymentServiceImplTest {
         payment.setId(PAYMENT_ID);
         payment.setStatus(Payment.Status.PENDING);
         payment.setBooking(createBooking());
-        payment.setSessionId("cs_test_a1HtKExKKHk1mxKCaqNaj40DkOI9jzLtnshjeFuzjfZovyn7R0vUaOXQxN");
+        payment.setSessionId(SESSION_ID);
         payment.setAmountToPay(BigDecimal.valueOf(130.00));
         try {
-            payment.setSessionUrl(new URL("https://checkout.stripe.com/c/pay/cs_test_a1HtKExKKHk1mxKC"
-                    + "aqNaj40DkOI9jzLtnshjeFuzjfZovyn7R0vUaOXQxN#fidkdWxOYHwnPyd1blpxYHZxWjA0SnBGX"
-                    + "0s1N0NmUz1WYWFoTTNLX1EwR2dJVGpxa1FnPHdKSkNHdDxrSG9zXUh%2FSnRBZ2NJSWhnQFNTdzNvP"
-                    + "XNWSX03YGpXMzx%2FbkRcYEg9V2NGTlw9RjVJNTV8cXU9c2EyNScpJ2N3amhWYHdzYHcnP3F3cGApJ2"
-                    + "lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl"));
+            payment.setSessionUrl(new URL(URL));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }

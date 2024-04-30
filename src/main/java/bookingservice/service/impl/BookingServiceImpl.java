@@ -11,11 +11,9 @@ import bookingservice.repository.BookingRepository;
 import bookingservice.service.AccommodationService;
 import bookingservice.service.BookingService;
 import bookingservice.service.NotificationService;
-
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -99,7 +97,8 @@ public class BookingServiceImpl implements BookingService {
     public void delete(Long id) {
         Booking booking = bookingMapper.toModel(getBookingDtoForCurrentUserById(id));
         if (!new BookingPredicate().test(booking)) {
-            throw new BookingException("The booking with id " + id + "has already been canceled or has expired");
+            throw new BookingException("The booking with id " + id
+                    + "has already been canceled or has expired");
         }
         booking.setStatus(Booking.Status.CANCELED);
         Booking cancelledBooking = bookingRepository.save(booking);

@@ -58,18 +58,19 @@ public class BookingServiceImplTest {
 
     @Test
     public void create_ValidRequestDto_ShouldReturnBookingDto() {
-        BookingRequestDto requestDto = createBookingRequestDto();
+
         BookingDto expected = createBookingDto();
         Booking booking = createBooking();
+        BookingRequestDto requestDto = createBookingRequestDto();
 
-        setupSecurityContext();
+        when(bookingMapper.toDto(booking)).thenReturn(expected);
         when(bookingRepository.findAllByCheckOutDateBetween(1L,
                 LocalDate.of(2024, 4, 22),
                 LocalDate.of(2024, 4, 23))).thenReturn(List.of(booking));
-        when(accommodationService.getById(1L)).thenReturn(createAccommodationDto());
         when(bookingMapper.toModel(requestDto)).thenReturn(booking);
+        setupSecurityContext();
+        when(accommodationService.getById(1L)).thenReturn(createAccommodationDto());
         when(bookingRepository.save(booking)).thenReturn(booking);
-        when(bookingMapper.toDto(booking)).thenReturn(expected);
         doNothing().when(notificationService).sendSuccessBookingMessage(expected);
 
         BookingDto actual = bookingService.create(requestDto);
@@ -189,7 +190,6 @@ public class BookingServiceImplTest {
         List<Booking> bookingList = List.of(booking);
         Page<Booking> bookingPage = new PageImpl<>(bookingList, unpaged(), bookingList.size());
         BookingDto expected = createBookingDto();
-        BookingRequestDto requestDto = createBookingRequestDto();
 
         setupSecurityContext();
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(bookingPage);
@@ -202,7 +202,7 @@ public class BookingServiceImplTest {
         when(bookingMapper.toDto(booking)).thenReturn(expected);
         when(bookingMapper.toModel(expected)).thenReturn(booking);
 
-        BookingDto actual = bookingService.updateBooking(BOOKING_ID, requestDto);
+        BookingDto actual = bookingService.updateBooking(BOOKING_ID, createBookingRequestDto());
         assertThat(actual).isEqualTo(expected);
     }
 
@@ -225,14 +225,14 @@ public class BookingServiceImplTest {
         Page<Booking> bookingPage = new PageImpl<>(bookingList, unpaged(), bookingList.size());
         AccommodationDto accommodationDto = createSecondAccommodationDto();
 
-        setupSecurityContext();
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(bookingPage);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+        when(accommodationService.getById(1L)).thenReturn(accommodationDto);
+        setupSecurityContext();
         when(bookingMapper.toModel(bookingDto)).thenReturn(booking);
         when(bookingRepository.findAllByCheckOutDateBetween(1L,
                 LocalDate.of(2024, 4, 22),
                 LocalDate.of(2024, 4, 23))).thenReturn(bookingList);
-        when(accommodationService.getById(1L)).thenReturn(accommodationDto);
 
         assertThatExceptionOfType(BookingException.class)
                 .isThrownBy(() -> bookingService.updateBooking(

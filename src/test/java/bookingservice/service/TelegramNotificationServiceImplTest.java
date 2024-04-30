@@ -1,5 +1,7 @@
 package bookingservice.service;
 
+import static org.mockito.Mockito.verify;
+
 import bookingservice.config.BotConfig;
 import bookingservice.dto.accommodation.AccommodationDto;
 import bookingservice.dto.booking.BookingDto;
@@ -16,8 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class TelegramNotificationServiceImplTest {
