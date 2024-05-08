@@ -42,7 +42,6 @@ public class AccommodationController {
         return accommodationService.getAll(pageable);
     }
 
-    @PreAuthorize("hasAuthority('USER')")
     @GetMapping("/{id}")
     @Operation(summary = "Get an accommodation by id")
     public AccommodationDto getById(@PathVariable Long id) {

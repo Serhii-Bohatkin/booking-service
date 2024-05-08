@@ -8,6 +8,7 @@ import bookingservice.mapper.BookingMapper;
 import bookingservice.model.Booking;
 import bookingservice.model.User;
 import bookingservice.repository.BookingRepository;
+import bookingservice.repository.UserRepository;
 import bookingservice.service.AccommodationService;
 import bookingservice.service.BookingService;
 import bookingservice.service.NotificationService;
@@ -27,6 +28,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final AccommodationService accommodationService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     @Override
     public BookingDto create(BookingRequestDto requestDto) {
@@ -144,9 +146,11 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private User getCurrentUser() {
-        return (User) SecurityContextHolder
+        String email = SecurityContextHolder
                 .getContext()
                 .getAuthentication()
-                .getPrincipal();
+                .getName();
+        return userRepository.findByEmail(email).orElseThrow(()
+                -> new EntityNotFoundException("Can't find user with email " + email));
     }
 }
