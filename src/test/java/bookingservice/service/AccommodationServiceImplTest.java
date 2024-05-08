@@ -87,7 +87,7 @@ public class AccommodationServiceImplTest {
 
         assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> accommodationService.getById(Long.MAX_VALUE))
-                .withMessage("Accommodation with id " + Long.MAX_VALUE + "not found");
+                .withMessage("Accommodation with id " + Long.MAX_VALUE + " not found");
     }
 
     @Test
@@ -112,7 +112,7 @@ public class AccommodationServiceImplTest {
 
         assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> accommodationService.getById(Long.MAX_VALUE))
-                .withMessage("Accommodation with id " + Long.MAX_VALUE + "not found");
+                .withMessage("Accommodation with id " + Long.MAX_VALUE + " not found");
     }
 
     @Test
@@ -134,7 +134,7 @@ public class AccommodationServiceImplTest {
 
         assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> accommodationService.getById(Long.MAX_VALUE))
-                .withMessage("Accommodation with id " + Long.MAX_VALUE + "not found");
+                .withMessage("Accommodation with id " + Long.MAX_VALUE + " not found");
     }
 
     private AccommodationDto createAccommodationDto() {

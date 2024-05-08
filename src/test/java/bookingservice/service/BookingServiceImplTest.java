@@ -20,6 +20,7 @@ import bookingservice.model.Accommodation;
 import bookingservice.model.Booking;
 import bookingservice.model.User;
 import bookingservice.repository.BookingRepository;
+import bookingservice.repository.UserRepository;
 import bookingservice.service.impl.BookingServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -50,6 +51,8 @@ public class BookingServiceImplTest {
     @Mock
     private NotificationService notificationService;
     @Mock
+    private UserRepository userRepository;
+    @Mock
     private SecurityContext securityContext;
     @Mock
     private Authentication authentication;
@@ -68,6 +71,7 @@ public class BookingServiceImplTest {
                 LocalDate.of(2024, 4, 22),
                 LocalDate.of(2024, 4, 23))).thenReturn(List.of(booking));
         when(bookingMapper.toModel(requestDto)).thenReturn(booking);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
         setupSecurityContext();
         when(accommodationService.getById(1L)).thenReturn(createAccommodationDto());
         when(bookingRepository.save(booking)).thenReturn(booking);
@@ -158,6 +162,7 @@ public class BookingServiceImplTest {
         setupSecurityContext();
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(bookingPage);
         when(bookingMapper.toDto(booking)).thenReturn(expected);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
 
         List<BookingDto> actual = bookingService.getAllForCurrentUser(unpaged());
         assertThat(actual.get(0)).isEqualTo(expected);
@@ -197,6 +202,7 @@ public class BookingServiceImplTest {
         when(bookingRepository.findAllByCheckOutDateBetween(1L,
                 LocalDate.of(2024, 4, 22),
                 LocalDate.of(2024, 4, 23))).thenReturn(bookingList);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
         when(accommodationService.getById(1L)).thenReturn(createAccommodationDto());
         when(bookingRepository.save(booking)).thenReturn(booking);
         when(bookingMapper.toDto(booking)).thenReturn(expected);
@@ -210,6 +216,7 @@ public class BookingServiceImplTest {
     public void updateBooking_NonExistingBookingId_ShouldThrowException() {
         setupSecurityContext();
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(Page.empty());
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
 
         assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> bookingService.updateBooking(
@@ -220,15 +227,16 @@ public class BookingServiceImplTest {
     @Test
     public void updateBooking_NotAvailableAccommodation_ShouldThrowException() {
         Booking booking = createBooking();
-        BookingDto bookingDto = createBookingDto();
         List<Booking> bookingList = List.of(booking);
         Page<Booking> bookingPage = new PageImpl<>(bookingList, unpaged(), bookingList.size());
+        BookingDto bookingDto = createBookingDto();
         AccommodationDto accommodationDto = createSecondAccommodationDto();
 
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(bookingPage);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
         when(accommodationService.getById(1L)).thenReturn(accommodationDto);
         setupSecurityContext();
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
         when(bookingMapper.toModel(bookingDto)).thenReturn(booking);
         when(bookingRepository.findAllByCheckOutDateBetween(1L,
                 LocalDate.of(2024, 4, 22),
@@ -251,6 +259,7 @@ public class BookingServiceImplTest {
         when(bookingMapper.toModel(bookingDto)).thenReturn(booking);
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(bookingPage);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
 
         bookingService.delete(BOOKING_ID);
 
@@ -263,6 +272,7 @@ public class BookingServiceImplTest {
     public void delete_NonExistingId_ShouldThrowException() {
         setupSecurityContext();
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(Page.empty());
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
 
         assertThatExceptionOfType(EntityNotFoundException.class)
                 .isThrownBy(() -> bookingService.delete(Long.MAX_VALUE))
@@ -281,6 +291,7 @@ public class BookingServiceImplTest {
         when(bookingMapper.toModel(bookingDto)).thenReturn(booking);
         when(bookingRepository.findAllByUserId(USER_ID, unpaged())).thenReturn(bookingPage);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+        when(userRepository.findByEmail(any())).thenReturn(Optional.of(createUser()));
 
         assertThatExceptionOfType(BookingException.class)
                 .isThrownBy(() -> bookingService.delete(BOOKING_ID))
@@ -389,7 +400,6 @@ public class BookingServiceImplTest {
 
     private void setupSecurityContext() {
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(createUser());
         SecurityContextHolder.setContext(securityContext);
     }
 }

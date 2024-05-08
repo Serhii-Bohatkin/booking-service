@@ -40,7 +40,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     public AccommodationDto getById(Long id) {
         Accommodation accommodation = accommodationRepository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Accommodation with id " + id + "not found")
+                () -> new EntityNotFoundException("Accommodation with id " + id + " not found")
         );
         return accommodationMapper.toDto(accommodation);
     }
