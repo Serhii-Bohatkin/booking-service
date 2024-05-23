@@ -19,7 +19,7 @@ rental experience. Thank you for attention
 
 * Spring Boot
 * Spring Data JPA
-* Spring Boot Security
+* Spring Security
 * JSON Web Token
 * Java 17
 * Maven
@@ -47,7 +47,7 @@ rental experience. Thank you for attention
    amenities, daily rental rate, and availability count.
    Soft deletion is implemented, allowing accommodations to be marked as deleted without permanent removal.
    This entity is fundamental to efficiently managing and offering diverse housing options within the system.
-3. **User (Customer)**: The user entity represents detailed information about registered users.
+3. **User**: The user entity represents detailed information about registered users.
    At this stage, there are only 2 roles that grant certain access rights to users, these are: user and admin.
 4. **Payment**: The Payment entity encapsulates information about a financial transaction. It includes a unique
    identifier, payment status (e.g., PENDING, PAID),
@@ -95,6 +95,8 @@ rental experience. Thank you for attention
 - **GET /payments/success/:** Handles successful payment processing through Stripe redirection
 - **GET /payments/cancel/:** Manages payment cancellation and returns payment paused messages during Stripe redirection
 
+### Health check controller:
+- **GET /actuator/health:** Check application status
 ## How to use the project⚙️
 
 1) Install docker
@@ -117,7 +119,36 @@ Now you can use the app with Swagger. Use the port specified in the .env file
 http://localhost:8081/swagger-ui/index.html
 ```
 
-or import the Postman collection from the root directory
+You can also use Postman:
+
+[download](https://github.com/Serhii-Bohatkin/booking-service/blob/master/Booking%20service%20API.postman_collection.json)
+the collection first, then import it into Postman
+
+![](icons/download_collection.jpg)
+![](icons/click_import.jpg)
+![](icons/select_collection_file.jpg)
+
+The first request is to register a user:
+```
+auth/register
+```
+then log in
+```
+auth/login
+```
+In response you will receive a JWT token, copy it
+
+![](icons/JWT_token.jpg)
+
+Now let's create the accommodation:
+
+Go to the "accommodation/createAccommodation" page, 
+select "Auth", "Type" and "Bearer Token". 
+Paste the JWT token into the field and complete the request
+
+![](icons/complete_request.jpg)
+
+Proceed in the same way for other requests
 
 ## Notification Service🔔
 
